@@ -5,6 +5,10 @@ int ZoomLevel = 0;
 int MuzzleVelocity[20];
 bool OnMuzzleVelocityHack = false, init = false;
 
+int MainProcedureOff = 0x2EE0A10;
+int QsSceneCameraOff = 0x29E5738;
+int EntityListOff = 0x2EF6F18;
+
 DWORD ReadDWORD(DWORD adr)
 {
 	if (IsBadReadPtr((VOID*)adr, sizeof(DWORD))) return NULL;
@@ -40,7 +44,7 @@ void NoRecoilMuzzleVelocity()
 	if (!init) {
 		Log("F3 Pressed, activating no recoil, no spread and initialize the MuzzleVelocity...\n");
 		//Hack Spread and Recoil
-		DWORD MainProcedureP = ReadDWORD(0x2EF12E8);
+		DWORD MainProcedureP = ReadDWORD(MainProcedureOff);
 		DWORD WeaponConfigTable = ReadDWORD(MainProcedureP + 0x60C);
 		DWORD Table = ReadDWORD(WeaponConfigTable + 0x40);
 		int EntrySize = 0x450;
@@ -60,8 +64,8 @@ void NoRecoilMuzzleVelocity()
 			float spread = *(float*)spreadAddr;
 			int rapid = *(int*)rapidAddr;
 			MuzzleVelocity[i] = rapid;
-			Log("Muzzle Velocity default value: %d \tMuzzleVelocity[%d]: %d\n", rapid, i + 1, MuzzleVelocity[i]);
-			Log("Patching weapon %d, recoil: %.2f, spread: %.2f\n", i, recoil, spread);
+			Log("Muzzle Velocity default value: %d \tMuzzleVelocity[%d]: %d\n", rapid, i + 1, MuzzleVelocity[i + 1]);
+			Log("Patching weapon %d, recoil: %.2f, spread: %.2f\n", i + 1, recoil, spread);
 			*(float*)(recoilAddr) = NewF;
 			*(float*)(spreadAddr) = NewF;
 		}
@@ -81,7 +85,7 @@ void MuzzleVelocityHack()
 	OnMuzzleVelocityHack = !OnMuzzleVelocityHack;
 	Log("F4 Pressed, Muzzle Velocity Hack now is %s\n", OnMuzzleVelocityHack ? "ON" : "OFF");
 	int NewMuzzleVelocityValue = 0;
-	DWORD MainProcedureP = ReadDWORD(0x2EF12E8);
+	DWORD MainProcedureP = ReadDWORD(MainProcedureOff);
 	DWORD WeaponConfigTable = ReadDWORD(MainProcedureP + 0x60C);
 	DWORD Table = ReadDWORD(WeaponConfigTable + 0x40);
 	int EntrySize = 0x450;
@@ -99,7 +103,7 @@ void MuzzleVelocityHack()
 		else {
 			NewMuzzleVelocityValue = MuzzleVelocity[i];
 		}
-		Log("MuzzleVelocity[%d]: %d, Muzzle Velocity Value to write: %d\n", i, MuzzleVelocity[i], NewMuzzleVelocityValue);
+		Log("MuzzleVelocity[%d]: %d, Muzzle Velocity Value to write: %d\n", i + 1, MuzzleVelocity[i + 1], NewMuzzleVelocityValue);
 		*(int*)(MuzzleVelocityAddr) = NewMuzzleVelocityValue;
 	}
 }
@@ -128,7 +132,8 @@ void CameraZoomHack()
 {
 	float* ZoomValue;
 	Log("Midle Mouse Pressed, activating Zoom Hack...\n");
-
+	//TODO in progess -> offset changed
+	return;
 	ZoomLevel++;
 	if (ZoomLevel > 3) {
 		ZoomLevel = 0;
@@ -136,7 +141,7 @@ void CameraZoomHack()
 
 	ZoomValue = getZoomValue(ZoomLevel);
 
-	DWORD QSCamera = ReadDWORD(0x29E594C);
+	DWORD QSCamera = ReadDWORD(QsSceneCameraOff);
 	DWORD Zoom = ReadDWORD(QSCamera + 0x4);
 	DWORD ZoomDetail = ReadDWORD(Zoom + 0x10);
 
@@ -157,7 +162,7 @@ void CameraZoomHack()
 
 	Log("Current Zoom Hack level: %d, -x: %.3f, x: %.3f, -y: %.3f, y: %.3f\n", ZoomLevel, ZoomNX, ZoomX, ZoomNY, ZoomY);
 	Log("Value to be apply Zoom Hack: -x: %.3f, x: %.3f, -y: %.3f, y: %.3f\n", -ZoomValue[0], ZoomValue[0], -ZoomValue[1], ZoomValue[1]);
-	
+
 	*(float*)(XAddr) = ZoomValue[0];
 	*(float*)(nXAddr) = -ZoomValue[0];
 	*(float*)(YAddr) = ZoomValue[1];
